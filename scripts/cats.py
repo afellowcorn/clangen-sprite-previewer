@@ -1,14 +1,9 @@
-from scripts.pelt import Pelt
-
 class Cat:
     def __init__(
         self,
-        SPRITE_DATA: None,
-        pose: None,
-        pelt: None,
-        color: None,
+        pelt: None
     ):
-        self.pelt = Pelt(SPRITE_DATA, pose, pelt, color)
+        self.pelt = pelt
         self.status = Status()
         self.dead = False
         self.prevent_fading = True

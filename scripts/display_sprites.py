@@ -1,10 +1,12 @@
 import pygame
+from copy import deepcopy
 
 from scripts.imports import constants, image_cache
 from scripts.imports.enums import CatAge, CatGroup
 from scripts.imports.get_clan_setting import get_clan_setting
 from scripts.imports.game_setting_get import game_setting_get
 from scripts.imports.scale import ui_scale_dimensions
+
 
 def generate_sprite(
     cat,
@@ -47,7 +49,9 @@ def generate_sprite(
 
     # generating the sprite
     try:
-        new_sprite = _draw_sprite(sprites, cat, cat_sprite, scars_hidden, dead, acc_hidden)
+        new_sprite = _draw_sprite(
+            sprites, cat, cat_sprite, scars_hidden, dead, acc_hidden
+        )
     except Exception as e:
         print(e)
         # Placeholder image
@@ -56,6 +60,7 @@ def generate_sprite(
         ).convert_alpha()
 
     return new_sprite
+
 
 # ------------------------------------------------------------------------------------------------------
 #  generate_sprites() Helper Functions
@@ -87,6 +92,14 @@ def _draw_sprite(
         tint = pygame.Surface((sprites.size, sprites.size)).convert_alpha()
         tint.fill(tuple(sprites.cat_tints["dilute_tint_colours"][cat.pelt.tint]))
         new_sprite.blit(tint, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
+
+    if (
+        cat.pelt.tint is not None
+        and cat.pelt.tint in sprites.cat_tints["remove_tone_tint_colours"]
+    ):
+        tint = pygame.Surface((sprites.size, sprites.size)).convert_alpha()
+        tint.fill(tuple(sprites.cat_tints["remove_tone_tint_colours"][cat.pelt.tint]))
+        new_sprite.blit(tint, (0, 0), special_flags=pygame.BLEND_RGB_SUB)
 
     # draw white patches
     if cat.pelt.white_patches is not None:
@@ -153,7 +166,7 @@ def _draw_sprite(
             (0, 0),
         )
 
-    # draw eyes & scars1
+    # draw eyes & scars
     sprite_name = (
         f"{sprites.EYE_DATA['spritesheet'][0]}{cat.pelt.eye_colour}{cat_sprite}"
     )
@@ -176,7 +189,7 @@ def _draw_sprite(
     if not scars_hidden:
         for scar in cat.pelt.scars:
             if scar in cat.pelt.general_scars:
-                sprite_name = f"{sprites.SCAR_DATA['spritesheet']}{scar}{cat_sprite}"
+                sprite_name = f"{sprites.SCAR_DATA['spritesheet'][0]}{scar}{cat_sprite}"
                 new_sprite.blit(
                     sprites.sprites[sprite_name],
                     (0, 0),
@@ -229,7 +242,7 @@ def _draw_sprite(
             for y in range(height):
                 if sprite.get_at((x, y)) == pygame.Color(0, 0, 0):
                     color = source.get_at((x, y))
-                    sprite.set_at((x, y), color)
+                    out.set_at((x, y), color)
         return out
 
     # draw line art
@@ -249,7 +262,7 @@ def _draw_sprite(
         new_sprite.blit(sprites.sprites["lineart_df" + cat_sprite], (0, 0))
     elif dead:
         new_sprite.blit(sprites.sprites["lineart_sc" + cat_sprite], (0, 0))
-    # draw skin and scars2
+    # draw skin and scar masks
     blendmode = pygame.BLEND_RGBA_MIN
     sprite_name = f"{sprites.SKIN_DATA['spritesheet']}{cat.pelt.skin}{cat_sprite}"
     new_sprite.blit(
@@ -259,19 +272,16 @@ def _draw_sprite(
 
     if not scars_hidden:
         for scar in cat.pelt.scars:
-            if scar in cat.pelt.missing_part_scars:
-                sprite_name = (
-                    f"{sprites.SCAR_MISSING_PART_DATA['spritesheet']}{scar}{cat_sprite}"
-                )
-                new_sprite.blit(
-                    _recolor_lineart(
-                        sprites.sprites[sprite_name],
-                        lineart_color,
-                        gradient_surface,
-                    ),
-                    (0, 0),
-                    special_flags=blendmode,
-                )
+            sprite_name = f"{sprites.SCAR_DATA['spritesheet'][1]}{scar}{cat_sprite}"
+            new_sprite.blit(
+                _recolor_lineart(
+                    sprites.sprites[sprite_name],
+                    lineart_color,
+                    gradient_surface,
+                ),
+                (0, 0),
+                special_flags=blendmode,
+            )
 
     # draw accessories
     from scripts.cat.pelts import Pelt
@@ -404,12 +414,19 @@ def _draw_sprite(
     return new_sprite
 
 
-def _build_pelt(sprites, cat, pelt_recipe: dict, colour: str, sprite: int) -> pygame.Surface:
+def _build_pelt(
+    sprites, cat, pelt_recipe: dict, colour: str, sprite: int
+) -> pygame.Surface:
     """Builds a image out of a pelt_recipe and colour"""
 
-    pelt_recipe = _apply_recipe_exceptions(pelt_recipe, colour, sprite)
+    pelt_recipe = _apply_recipe_exceptions(sprites, pelt_recipe, colour, sprite)
     surface, blendmode, opacity = _build_layers(
-        sprites, cat, pelt_recipe.get("layer_order"), pelt_recipe.get("layers"), colour, sprite
+        sprites,
+        cat,
+        pelt_recipe.get("layer_order"),
+        pelt_recipe.get("layers"),
+        colour,
+        sprite,
     )
 
     return surface
@@ -573,50 +590,61 @@ def _get_pelt_recipe(sprites, pelt_name: str):
     return pelt_recipe
 
 
-def _apply_recipe_exceptions(pelt_recipe: dict, colour: str, sprite: int) -> dict:
+def _apply_recipe_exceptions(
+    sprites, pelt_recipe: dict, colour: str, sprite: int
+) -> dict:
     """Some pelts have special rules for certain colors and/or poses. This checks to see if that's the case, and applies the rule."""
     MAX_MATCHES = 2
 
     exceptions = pelt_recipe.get("exceptions", None)
 
     # We want to find the best match - that exception were we meet the most conditions.
-    match = None
-    match_num = 0
+    curr_match = None
+    curr_match_num = 0
     for one_ex in exceptions:
         match_num = 0
+        # How many matches are needed to meet requriments.
+        needed_matches = 0
 
         # Check to see if it matches at least one color condition.
-        color_conditions = one_ex.get("colors", "")
-        if (
-            type(color_conditions) is list and colour in color_conditions
-        ) or color_conditions == colour:
-            match_num += 1
+        color_conditions = one_ex.get("colors")
+        if color_conditions:
+            needed_matches += 1
+            if (
+                type(color_conditions) is list and colour in color_conditions
+            ) or color_conditions == colour:
+                match_num += 1
 
-        pose = sprites.POSE_DATA[int(sprite)]
-        pose_conditions = one_ex.get("poses", "")
-        if (
-            type(pose_conditions) is list and pose in color_conditions
-        ) or pose_conditions == pose:
-            match_num += 1
+        pose = sprites.POSE_DATA["poses"][int(sprite)]
+        pose_conditions = one_ex.get("poses")
+        if pose_conditions:
+            needed_matches += 1
+            if (
+                type(pose_conditions) is list and pose in pose_conditions
+            ) or pose_conditions == pose:
+                match_num += 1
 
-        if match > 0:
-            match = one_ex
+        if match_num == needed_matches and match_num >= curr_match_num:
+            curr_match = one_ex
+            curr_match_num = match_num
 
-        if match == MAX_MATCHES:
+        if curr_match_num == MAX_MATCHES:
             break
 
-    if match:
+    if curr_match:
         # If we reached here, the exception applies
-        except_recipe = pelt_recipe.copy()
+        except_recipe = deepcopy(pelt_recipe)
         # Remove the exceptions, just so there we don't apply an exception again.
         except_recipe.pop("exceptions")
 
-        if "layer_order" in one_ex:
-            except_recipe["layer_order"] = one_ex["layer_order"]
+        if "layer_order" in curr_match:
+            except_recipe["layer_order"] = curr_match["layer_order"]
 
-        if "layers" in one_ex:
-            for key, value in one_ex["layers"].items():
-                except_recipe["layers"][key] = one_ex["layers"][key] | value
+        if "layers" in curr_match:
+            for key, value in curr_match["layers"].items():
+                except_recipe["layers"][key] = (
+                    except_recipe["layers"].get(key, {}) | value
+                )
 
         return except_recipe
 

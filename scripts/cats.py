@@ -1,8 +1,5 @@
 class Cat:
-    def __init__(
-        self,
-        pelt: None
-    ):
+    def __init__(self, pelt: None):
         self.pelt = pelt
         self.status = Status()
         self.dead = False
@@ -11,6 +8,7 @@ class Cat:
 
     def not_working():
         return False
+
 
 class Status:
     def __init__(self):

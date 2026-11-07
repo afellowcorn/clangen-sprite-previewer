@@ -12,9 +12,7 @@ class Pelt:
     ):
         self.name = pelt
         self.colour = color
-        self.cat_sprites = {
-            "adult": pose
-        }
+        self.cat_sprites = {"adult": pose}
         self.eye_colour = eye_color
         self.skin = skin
         self.eye_colour2 = None
@@ -28,21 +26,31 @@ class Pelt:
         self.reverse = False
 
         # WHITE MARKINGS
-        self.little_white: list = list(SPRITE_DATA.white_patches_combos.get("little", {}).keys())
+        self.little_white: list = list(
+            SPRITE_DATA.white_patches_combos.get("little", {}).keys()
+        )
         for sprite_list in SPRITE_DATA.white_patches_little_sprite_data["sprite_list"]:
             self.little_white.extend(sprite_list)
-        self.mid_white: list = list(SPRITE_DATA.white_patches_combos.get("mid", {}).keys())
+        self.mid_white: list = list(
+            SPRITE_DATA.white_patches_combos.get("mid", {}).keys()
+        )
         for sprite_list in SPRITE_DATA.white_patches_mid_sprite_data["sprite_list"]:
             self.mid_white.extend(sprite_list)
-        self.high_white: list = list(SPRITE_DATA.white_patches_combos.get("high", {}).keys())
+        self.high_white: list = list(
+            SPRITE_DATA.white_patches_combos.get("high", {}).keys()
+        )
         for sprite_list in SPRITE_DATA.white_patches_high_sprite_data["sprite_list"]:
             self.high_white.extend(sprite_list)
-        self.mostly_white: list = list(SPRITE_DATA.white_patches_combos.get("mostly", {}).keys())
+        self.mostly_white: list = list(
+            SPRITE_DATA.white_patches_combos.get("mostly", {}).keys()
+        )
         for sprite_list in SPRITE_DATA.white_patches_mostly_sprite_data["sprite_list"]:
             # have to remove FULLWHITE as it's handled special
             self.mostly_white.extend([x for x in sprite_list if x != "FULLWHITE"])
         self.vitiligo_markings: list = []
-        for sprite_list in SPRITE_DATA.white_patches_vitiligo_sprite_data["sprite_list"]:
+        for sprite_list in SPRITE_DATA.white_patches_vitiligo_sprite_data[
+            "sprite_list"
+        ]:
             self.vitiligo_markings.extend(sprite_list)
         self.point_markings: list = []
         for sprite_list in SPRITE_DATA.white_patches_points_sprite_data["sprite_list"]:

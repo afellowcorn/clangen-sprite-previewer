@@ -1,5 +1,6 @@
 from scripts.load_sprites import sprites
 
+
 class Pelt:
     # ACCESSORIES
     # make sure to add plural and singular forms of new accs to accessories.en.json so that they will display nicely
@@ -9,6 +10,7 @@ class Pelt:
     tail_accessories = []
     body_accessories = []
     head_accessories = []
+    paw_accessories = []
 
     # here we create the master lists of each accessory type
     plant_accessories = []
@@ -20,7 +22,9 @@ class Pelt:
             elif sprite_list[sprite] == "body":
                 body_accessories.append(sprite)
             elif sprite_list[sprite] == "head":
-                body_accessories.append(sprite)
+                head_accessories.append(sprite)
+            elif sprite_list[sprite] == "paw":
+                paw_accessories.append(sprite)
 
     wild_accessories = []
     for sprite_list in sprites.WILD_DATA["sprite_list"]:
@@ -31,7 +35,9 @@ class Pelt:
             elif sprite_list[sprite] == "body":
                 body_accessories.append(sprite)
             elif sprite_list[sprite] == "head":
-                body_accessories.append(sprite)
+                head_accessories.append(sprite)
+            elif sprite_list[sprite] == "paw":
+                paw_accessories.append(sprite)
 
     collar_accessories = []
     collar_styles = []

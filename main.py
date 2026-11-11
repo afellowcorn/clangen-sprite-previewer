@@ -84,7 +84,7 @@ def draw():
 def generate_cat():
     if not SPRITES.sprites:
         load_sprite_data()
-
+    print(SPRITES.size)
     _PELT = PELT
     _COLOR = COLOR
     _TINT = TINT
@@ -150,7 +150,7 @@ def load_config_data():
         SCALE = config.get("sprite_scale", 1.0)
         WINDOW = config.get("window_size", (500, 500))
         BACKGROUND = config.get("background_color", (150, 150, 150))
-    except Exception as e:
+    except:
         POSE = []
         PELT = []
         COLOR = []
@@ -163,7 +163,7 @@ def load_config_data():
         WINDOW = (500, 500)
         BACKGROUND = (150, 150, 150)
 
-        print(f"Failed to load config: {e}")
+        print(f"Failed to load config")
 
 
 def save_config_data():
@@ -193,6 +193,7 @@ def load_sprite_data():
         with open(f"{SPRITE_DATA_DIR}/{x}", "r", encoding="utf-8") as read_file:
             name = x.split(".")
             setattr(SPRITE_DATA, f"{name[0]}", ujson.loads(read_file.read()))
+    SPRITES.sprites.clear()
     SPRITES.load_all()
 
 
@@ -200,7 +201,6 @@ def update():
     SCREEN = pygame.display.set_mode((500, 500))
     load_sprite_data()
     pygame.quit()
-
 
 
 # SETUP
@@ -224,7 +224,6 @@ if not SIZE:
         SIZE = int(SPRITES.size)
     else:
         SIZE = 50
-
 pygame.quit()
 print_help()
 
@@ -289,6 +288,8 @@ while 1:
 
             case "size" if len(cmd) > 1:
                 SIZE = int(cmd[1])
+                SPRITES.size = SIZE
+                update()
                 print(f"Set SIZE to {SIZE}.")
             case "size":
                 print(f"SIZE: {SIZE}.")

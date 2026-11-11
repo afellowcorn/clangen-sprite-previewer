@@ -84,7 +84,6 @@ def draw():
 def generate_cat():
     if not SPRITES.sprites:
         load_sprite_data()
-    print(SPRITES.size)
     _PELT = PELT
     _COLOR = COLOR
     _TINT = TINT
